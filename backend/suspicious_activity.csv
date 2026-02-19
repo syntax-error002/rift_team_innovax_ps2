@@ -1,0 +1,16 @@
+sender_id,receiver_id,amount,timestamp
+Kingpin,Mule1,5000,2023-01-01 10:00:00
+Kingpin,Mule2,5000,2023-01-01 10:01:00
+Kingpin,Mule3,5000,2023-01-01 10:02:00
+Kingpin,Mule4,5000,2023-01-01 10:03:00
+Kingpin,Mule5,5000,2023-01-01 10:04:00
+Kingpin,Mule6,5000,2023-01-01 10:05:00
+Kingpin,Mule7,5000,2023-01-01 10:06:00
+Kingpin,Mule8,5000,2023-01-01 10:07:00
+Kingpin,Mule9,5000,2023-01-01 10:08:00
+Kingpin,Mule10,5000,2023-01-01 10:09:00
+Mule1,Layer1,4900,2023-01-02 10:00:00
+Layer1,Sink,4800,2023-01-02 12:00:00
+Alpha,Beta,1000,2023-01-03 10:00:00
+Beta,Gamma,1000,2023-01-03 11:00:00
+Gamma,Alpha,1000,2023-01-03 12:00:00

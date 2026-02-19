@@ -82,12 +82,22 @@ def analyze_transactions(df: pd.DataFrame) -> Dict[str, Any]:
             is_suspicious = True
             risk_score += 40
             node_type = "mule"
-        
-        # Heuristic 2: Source / Layerer / Kingpin (High PR + High Out)
+
+        # Heuristic 2: Structuring / Smurfing (Many small ins, one big out)
+        # Assuming < $10,000 is the reporting threshold, closer to 9000-9999 is suspicious
+        # Or just many small transactions coming in.
+        avg_in_tx = curr_in / (G.in_degree(node) + 0.001)
+        if G.in_degree(node) > 5 and avg_in_tx < 3000 and curr_out > (curr_in * 0.9):
+             is_suspicious = True
+             risk_score += 35
+             node_type = "aggregator" # Smurf aggregator
+
+        # Heuristic 3: Source / Kingpin (High PR + High Out + Low In)
         if pr_score > 0.05: # High relative influence
             risk_score += 20
-            if curr_out > curr_in:
+            if curr_out > (curr_in * 1.5): # Net exporter of funds
                  node_type = "source"
+                 risk_score += 15
 
         # Assign attributes to graph
         G.nodes[node]['risk_score'] = risk_score
