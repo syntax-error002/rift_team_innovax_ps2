@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Digital Detective - Fraud Analysis</title>
+    <script src="//unpkg.com/force-graph"></script>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Courier New', Courier, monospace;
+            background: #0a0a0a;
+            color: #00ff00;
+            overflow: hidden;
+        }
+
+        #controls {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border: 1px solid #00ff00;
+        }
+
+        h1 {
+            margin-top: 0;
+            text-shadow: 0 0 5px #00ff00;
+        }
+
+        input[type="file"] {
+            margin-bottom: 10px;
+            color: #00ff00;
+        }
+
+        button {
+            background: #00ff00;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #fff;
+        }
+
+        #report {
+            position: absolute;
+            right: 0;
+            top: 0;
+            width: 300px;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            border-left: 1px solid #00ff00;
+            padding: 20px;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .node-label {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 2px 5px;
+            border-radius: 3px;
+            color: #fff;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="controls">
+        <h1>DIGITAL DETECTIVE</h1>
+        <p>Upload Transaction CSV</p>
+        <input type="file" id="csvFile" accept=".csv">
+        <button onclick="analyze()">ANALYZE NETWORK</button>
+        <button onclick="loadDemo()" style="background: #ffa500; margin-left: 10px;">LOAD DEMO DATA</button>
+        <div id="status" style="margin-top: 10px; color: yellow;"></div>
+    </div>
+
+    <div id="graph"></div>
+
+    <div id="report">
+        <h2>CASE REPORT</h2>
+        <div id="gemini-content"></div>
+        <h3>SUSPICIOUS NODES</h3>
+        <ul id="node-list"></ul>
+    </div>
+
+    <script>
+        const Graph = ForceGraph()(document.getElementById('graph'))
+            .backgroundColor('#0a0a0a')
+            .nodeId('id')
+            .nodeLabel('id')
+            .nodeColor(node => node.type === 'Red' ? '#ff0000' : (node.type === 'Orange' ? '#ffa500' : '#555'))
+            .nodeVal(node => Math.sqrt(node.score || 1) * 2)
+            .linkColor(() => 'rgba(0,255,0,0.2)')
+            .linkDirectionalParticles(2)
+            .linkDirectionalParticleSpeed(d => d.amount * 0.001)
+            .onNodeClick(node => {
+                alert(`ID: ${node.id}\nScore: ${node.score}\nType: ${node.type}`);
+            });
+
+        async function loadDemo() {
+            const status = document.getElementById('status');
+            status.innerText = "Fetching demo data...";
+            try {
+                const csvRes = await fetch('/sample-csv');
+                if (!csvRes.ok) throw new Error("Failed to load demo data");
+                const blob = await csvRes.blob();
+                const file = new File([blob], "demo_data.csv", { type: "text/csv" });
+
+                // Manually trigger analysis with this file
+                analyzeFile(file);
+            } catch (e) {
+                status.innerText = "Error loading demo: " + e.message;
+            }
+        }
+
+        async function analyze() {
+            const fileInput = document.getElementById('csvFile');
+            if (!fileInput.files[0]) {
+                alert("Please select a file or click Load Demo Data!");
+                return;
+            }
+            analyzeFile(fileInput.files[0]);
+        }
+
+        async function analyzeFile(file) {
+            const status = document.getElementById('status');
+            status.innerText = "Processing Anomaly Detection...";
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) throw new Error("Analysis failed");
+
+                const result = await response.json();
+
+                // Update Graph
+                const gData = result.graph_data;
+                Graph.graphData(gData);
+
+                // Update Report
+                document.getElementById('report').style.display = 'block';
+                // Use explainable_report from backend
+                document.getElementById('gemini-content').innerHTML = result.explainable_report;
+
+                const list = document.getElementById('node-list');
+                list.innerHTML = "";
+                result.network_analysis
+                    .filter(n => n.score > 0)
+                    .sort((a, b) => b.score - a.score)
+                    .forEach(n => {
+                        const li = document.createElement('li');
+                        li.innerHTML = `<strong>${n.id}</strong><br>Score: ${n.score}<br><small>${n.reason}</small><br><hr>`;
+                        list.appendChild(li);
+                    });
+
+                status.innerText = "Analysis Complete.";
+
+            } catch (e) {
+                status.innerText = "Error: " + e.message;
+                console.error(e);
+            }
+        }
+    </script>
+</body>
+
+</html>
