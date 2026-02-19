@@ -292,17 +292,17 @@ export function GraphView({ elements, onNodeClick, searchTerm }: GraphViewProps)
                 name: 'cose',
                 animate: true,
                 animationDuration: 1000,
-                nodeRepulsion: () => 1000000, // Strong repulsion to spread nodes out
-                idealEdgeLength: () => 150,   // Longer edges for "thread-like" look
+                nodeRepulsion: () => 400000, // Reduced repulsion (was 1M) to allow clustering
+                idealEdgeLength: () => 100,   // Standard edge length (was 150)
                 // @ts-ignore
-                gravity: 0.1,                 // Very low gravity to allow "floating"
+                gravity: 0.25,                 // Increased gravity (was 0.1) to pull graph together
                 // @ts-ignore
                 numIter: 1000,
                 // @ts-ignore
                 refresh: 20,
                 fit: true,
-                padding: 50,
-                componentSpacing: 60,
+                padding: 30,
+                componentSpacing: 40,
                 nodeOverlap: 20,
             },
             minZoom: 0.2,
