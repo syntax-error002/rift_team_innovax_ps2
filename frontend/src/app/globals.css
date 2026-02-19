@@ -1,0 +1,322 @@
+@import "tailwindcss";
+@plugin "tailwindcss-animate";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+
+  @keyframes accordion-down {
+    from {
+      height: 0;
+    }
+
+    to {
+      height: var(--radix-accordion-content-height);
+    }
+  }
+
+  @keyframes accordion-up {
+    from {
+      height: var(--radix-accordion-content-height);
+    }
+
+    to {
+      height: 0;
+    }
+  }
+}
+
+@utility container {
+  margin-inline: auto;
+  padding-inline: 2rem;
+
+  @media (width >=1400px) {
+    max-width: 1400px;
+  }
+}
+
+/* ──────────────────────────────────────────────────────
+   FALLBACK DEFAULTS (overridden immediately by ThemeProvider
+   which calls style.setProperty on <html> at runtime)
+────────────────────────────────────────────────────── */
+:root {
+  /* Clean Neon Sci-Fi Theme - Deep Void & Neon Cyan */
+  --background: 240 10% 4%;
+  /* #09090b - Deep void black */
+  --foreground: 210 40% 98%;
+  /* #f8fafc */
+
+  --card: 240 10% 6%;
+  /* Slightly lighter void */
+  --card-foreground: 210 40% 98%;
+
+  --popover: 240 10% 6%;
+  --popover-foreground: 210 40% 98%;
+
+  --primary: 180 100% 50%;
+  /* #00ffff - Neon Cyan */
+  --primary-foreground: 240 10% 4%;
+
+  --secondary: 217 33% 17%;
+  /* Dark slate blue */
+  --secondary-foreground: 210 40% 98%;
+
+  --muted: 217 33% 12%;
+  --muted-foreground: 215 20% 65%;
+
+  --accent: 280 100% 60%;
+  /* #c026d3 - Neon Purple */
+  --accent-foreground: 210 40% 98%;
+
+  --destructive: 0 100% 60%;
+  /* #ff3333 */
+  --destructive-foreground: 210 40% 98%;
+
+  --border: 217 33% 15%;
+  --input: 217 33% 15%;
+  --ring: 180 100% 50%;
+
+  --radius: 0.2rem;
+  /* Minimal radius for sci-fi look */
+
+  /* Sci-Fi Specifics */
+  --theme-edge-glow: #00ffff;
+  --theme-mesh-a: hsla(180, 100%, 50%, 0.15);
+  /* Cyan glow */
+  --theme-mesh-b: hsla(280, 100%, 60%, 0.1);
+  /* Purple ambient */
+  --theme-mesh-c: hsla(240, 100%, 10%, 0.5);
+  /* Deep depth */
+}
+
+/* ──────────────────────────────────────────────────────
+   BASE STYLES
+────────────────────────────────────────────────────── */
+@layer base {
+
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-border, currentColor);
+  }
+
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-family: 'Inter', 'Geist', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    /* Smooth color transition when theme changes */
+    transition: background-color 350ms ease, color 350ms ease;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    letter-spacing: -0.025em;
+    font-weight: 700;
+  }
+}
+
+/* ──────────────────────────────────────────────────────
+   ANIMATED MESH BACKGROUND
+   Uses --theme-mesh-* vars set by ThemeProvider
+────────────────────────────────────────────────────── */
+.bg-cyber-mesh {
+  background-color: hsl(var(--background));
+  background-image:
+    radial-gradient(ellipse 80% 60% at 0% 0%, var(--theme-mesh-a) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 100% 0%, var(--theme-mesh-b) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 50% 100%, var(--theme-mesh-c) 0%, transparent 60%);
+  background-attachment: fixed;
+  transition: background-color 350ms ease;
+}
+
+/* Dot grid overlay */
+.bg-cyber-mesh::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: radial-gradient(circle, color-mix(in srgb, hsl(var(--primary)) 8%, transparent) 1px, transparent 1px);
+  background-size: 32px 32px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ──────────────────────────────────────────────────────
+   GLASS PANEL
+────────────────────────────────────────────────────── */
+.glass-panel {
+  background: color-mix(in srgb, hsl(var(--card)) 40%, transparent);
+  /* More transparent */
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid color-mix(in srgb, hsl(var(--primary)) 20%, transparent);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  transition: background 350ms ease, border-color 350ms ease, box-shadow 350ms ease;
+}
+
+.glass-panel:hover {
+  border-color: color-mix(in srgb, hsl(var(--primary)) 40%, transparent);
+  box-shadow: 0 0 15px color-mix(in srgb, hsl(var(--primary)) 15%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+/* ──────────────────────────────────────────────────────
+   SITE HEADER — glass with primary-tinted border
+────────────────────────────────────────────────────── */
+.site-header {
+  background: color-mix(in srgb, hsl(var(--background)) 70%, transparent);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-bottom: 1px solid color-mix(in srgb, hsl(var(--primary)) 20%, transparent);
+  transition: background 350ms ease, border-color 350ms ease;
+}
+
+/* ──────────────────────────────────────────────────────
+   CARD HOVER GLOW (uses primary accent per theme)
+────────────────────────────────────────────────────── */
+.stat-card {
+  transition: border-color 250ms, box-shadow 250ms, transform 200ms;
+}
+
+.stat-card:hover {
+  border-color: color-mix(in srgb, hsl(var(--primary)) 50%, transparent) !important;
+  box-shadow: 0 0 24px color-mix(in srgb, hsl(var(--primary)) 18%, transparent),
+    0 4px 16px rgba(0, 0, 0, 0.25);
+  transform: translateY(-2px);
+}
+
+/* ──────────────────────────────────────────────────────
+   NEON TEXT GLOW
+────────────────────────────────────────────────────── */
+.text-glow {
+  text-shadow: 0 0 5px color-mix(in srgb, hsl(var(--primary)) 80%, transparent),
+    0 0 15px color-mix(in srgb, hsl(var(--primary)) 50%, transparent),
+    0 0 30px color-mix(in srgb, hsl(var(--primary)) 20%, transparent);
+}
+
+.text-glow-danger {
+  text-shadow: 0 0 8px rgba(248, 113, 113, 0.7), 0 0 20px rgba(248, 113, 113, 0.3);
+}
+
+/* ──────────────────────────────────────────────────────
+   TABLE ROWS
+────────────────────────────────────────────────────── */
+tbody tr {
+  transition: background-color 120ms;
+}
+
+tbody tr:hover {
+  background-color: color-mix(in srgb, hsl(var(--primary)) 5%, transparent) !important;
+}
+
+/* ──────────────────────────────────────────────────────
+   ANIMATIONS
+────────────────────────────────────────────────────── */
+@keyframes slide-in-bottom {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-in {
+  animation: slide-in-bottom 0.4s ease-out both;
+}
+
+.animate-pulse-slow {
+  animation: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse-glow {
+
+  0%,
+  100% {
+    box-shadow: 0 0 6px color-mix(in srgb, hsl(var(--primary)) 25%, transparent);
+  }
+
+  50% {
+    box-shadow: 0 0 22px color-mix(in srgb, hsl(var(--primary)) 55%, transparent);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+
+/* ──────────────────────────────────────────────────────
+   SCROLLBAR
+────────────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, hsl(var(--primary)) 30%, transparent);
+  border-radius: 99px;
+  transition: background 350ms;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, hsl(var(--primary)) 55%, transparent);
+}
+
+/* ──────────────────────────────────────────────────────
+   FORM CONTROLS
+────────────────────────────────────────────────────── */
+input[type="range"] {
+  accent-color: hsl(var(--primary));
+}
+
+input[type="checkbox"] {
+  accent-color: hsl(var(--primary));
+}
+
+/* ──────────────────────────────────────────────────────
+   LIGHT THEME OVERRIDES (body bg lightens glassy overlays)
+────────────────────────────────────────────────────── */
+.light .glass-panel,
+.light .site-header {
+  background: color-mix(in srgb, hsl(var(--card)) 85%, transparent);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+.light .bg-cyber-mesh::before {
+  background-image: radial-gradient(circle, rgba(0, 0, 0, 0.04) 1px, transparent 1px);
+}
