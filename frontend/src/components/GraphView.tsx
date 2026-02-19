@@ -304,6 +304,8 @@ export function GraphView({ elements, onNodeClick, searchTerm }: GraphViewProps)
                 padding: 30,
                 componentSpacing: 40,
                 nodeOverlap: 20,
+                // @ts-ignore
+                packComponents: true, // Pack unconnected components tightly
             },
             minZoom: 0.2,
             maxZoom: 3,
@@ -380,7 +382,7 @@ export function GraphView({ elements, onNodeClick, searchTerm }: GraphViewProps)
                 cyRef.current.destroy();
             }
         };
-    }, [elements, onNodeClick, theme]);
+    }, [safeElements, onNodeClick]);
 
     // --- SEARCH EFFECT ---
     useEffect(() => {
@@ -397,6 +399,7 @@ export function GraphView({ elements, onNodeClick, searchTerm }: GraphViewProps)
             const matches = cy.nodes().filter((node) => {
                 const data = node.data();
                 const idMatch = data.id.toUpperCase().includes(term);
+                // @ts-ignore
                 const ringMatch = data.rings && data.rings.some((r: string) => r.toUpperCase().includes(term));
                 return idMatch || ringMatch;
             });
@@ -421,96 +424,64 @@ export function GraphView({ elements, onNodeClick, searchTerm }: GraphViewProps)
     }, [searchTerm]);
 
     return (
-        <div className="relative w-full h-full">
-            <Card className="w-full h-[600px] border-none shadow-none bg-zinc-50 dark:bg-zinc-950 overflow-hidden relative">
-                <div ref={containerRef} className="w-full h-full" />
+        <div className={`relative w-full h-full rounded-xl overflow-hidden shadow-2xl border border-slate-700/50 ${className}`}>
+            <div
+                ref={containerRef}
+                className="w-full h-full bg-scifi-grid" // Use the new animated grid
+            />
 
-                {/* Performance Warning / Filtering Badge */}
-                {statInfo && (
-                    <div className="absolute top-4 left-4 z-10 animate-in fade-in slide-in-from-top-2">
-                        <div className="bg-amber-500/10 backdrop-blur border border-amber-500/20 text-amber-500 px-3 py-2 rounded-lg text-xs font-mono shadow-lg flex items-center gap-2">
-                            <span className="relative flex h-2 w-2">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-500 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
-                            </span>
-                            <div>
-                                <div className="font-bold">HIGH DENSITY MODE</div>
-                                <div className="opacity-80">Showing {statInfo.visible} / {statInfo.total} nodes (Threat Core)</div>
-                            </div>
-                        </div>
+            {/* Legend / Overlay Controls */}
+            <div className="absolute bottom-4 right-4 pointer-events-none z-10">
+                <div className="bg-slate-950/80 backdrop-blur-md p-3 rounded-lg border border-slate-800 text-xs text-slate-400 pointer-events-auto">
+                    <div className="flex items-center gap-2 mb-1">
+                        <div className="w-3 h-3 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.5)]"></div>
+                        <span>Safe Account</span>
                     </div>
-                )}
-
-                {/* Floating Tooltip/Legend */}
-                <div className="absolute top-4 right-4 bg-background/90 backdrop-blur border p-3 rounded-lg shadow-sm text-xs space-y-2 pointer-events-none z-10">
-                    <div className="font-semibold mb-1">Graph Legend</div>
-                    <div className="flex items-center gap-2">
-                        <span className="w-3 h-3 rounded-full bg-slate-400 border border-slate-600"></span>
-                        <span>Normal Account</span>
+                    <div className="flex items-center gap-2 mb-1">
+                        <div className="w-3 h-3 rounded-full bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.5)]"></div>
+                        <span>Mule Account</span>
                     </div>
                     <div className="flex items-center gap-2">
-                        <span className="w-3 h-3 rounded-full bg-red-500 border-2 border-red-900"></span>
-                        <span>Suspicious / Mule</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 bg-orange-500 border border-orange-700 rotate-45"></div>
-                        <data value="Aggregator / Shell" />
-                        <span>Aggregator / Shell</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 bg-amber-600 border border-amber-900 clip-hexagon"></div>
-                        <span>Structuring Sink</span>
+                        <div className="w-3 h-3 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]"></div>
+                        <span>Fraud Ring</span>
                     </div>
                 </div>
+            </div>
 
-                {/* Hover Info Card */}
-                {hoveredNode && (
-                    <div className="absolute bottom-4 left-4 z-20 pointer-events-none animate-in fade-in slide-in-from-bottom-2 duration-300">
-                        <Card className="w-64 shadow-xl border-primary/20 bg-background/95 backdrop-blur">
-                            <div className="p-3 border-b bg-muted/50">
-                                <div className="font-bold flex justify-between items-center text-sm">
-                                    {hoveredNode.id}
-                                    {hoveredNode.suspicious && <Badge variant="destructive" className="text-[10px] h-5">SUSPICIOUS</Badge>}
-                                </div>
+            {hoveredNode && (
+                <div className="absolute top-4 left-4 z-50 pointer-events-none">
+                    <Card className="w-64 bg-slate-900/90 backdrop-blur-xl border border-cyan-500/30 text-slate-100 shadow-[0_0_20px_rgba(6,182,212,0.2)] animate-in fade-in zoom-in-95 duration-200">
+                        <CardHeader className="p-4 pb-2 border-b border-white/5">
+                            <CardTitle className="text-sm font-mono text-cyan-400 flex items-center gap-2">
+                                <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_8px_rgba(34,211,238,0.8)]" />
+                                {hoveredNode.id}
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-4 pt-3 text-xs space-y-3">
+                            <div className="flex justify-between items-center">
+                                <span className="text-slate-400">Risk Score</span>
+                                <span className={`font-bold px-2 py-0.5 rounded ${hoveredNode.risk_score > 75 ? 'bg-rose-500/20 text-rose-400 border border-rose-500/50' :
+                                        hoveredNode.risk_score > 40 ? 'bg-amber-500/20 text-amber-400 border border-amber-500/50' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/50'
+                                    }`}>
+                                    {typeof hoveredNode.risk_score === 'number' ? hoveredNode.risk_score.toFixed(1) : 'N/A'}
+                                </span>
                             </div>
-                            <div className="p-3 text-xs space-y-1">
-                                <div className="flex justify-between">
-                                    <span className="text-muted-foreground">Type:</span>
-                                    <span className="font-medium capitalize">{hoveredNode.type || 'standard'}</span>
-                                </div>
-                                {typeof hoveredNode.risk_score === 'number' && (
-                                    <div className="flex justify-between">
-                                        <span className="text-muted-foreground">Risk score:</span>
-                                        <span className={`font-bold ${hoveredNode.risk_score > 80 ? 'text-red-500' : 'text-orange-500'}`}>
-                                            {hoveredNode.risk_score.toFixed(1)}
-                                        </span>
-                                    </div>
-                                )}
-                                {typeof hoveredNode.pagerank === 'number' && (
-                                    <div className="flex justify-between">
-                                        <span className="text-muted-foreground">PageRank:</span>
-                                        <span className="font-mono">{hoveredNode.pagerank.toFixed(3)}</span>
-                                    </div>
-                                )}
-                                {typeof hoveredNode.community === 'number' && hoveredNode.community >= 0 && (
-                                    <div className="flex justify-between">
-                                        <span className="text-muted-foreground">Community:</span>
-                                        <span className="font-mono">#{hoveredNode.community}</span>
-                                    </div>
-                                )}
-                                {Array.isArray(hoveredNode.rings) && hoveredNode.rings.length > 0 && (
-                                    <div className="flex justify-between gap-2">
-                                        <span className="text-muted-foreground">Rings:</span>
-                                        <span className="font-mono truncate" title={hoveredNode.rings.join(', ')}>
-                                            {hoveredNode.rings.join(', ')}
-                                        </span>
-                                    </div>
-                                )}
+                            <div className="flex justify-between items-center">
+                                <span className="text-slate-400">Type</span>
+                                <Badge variant="outline" className="text-[10px] capitalize border-slate-700 bg-slate-800/50 text-slate-300">
+                                    {hoveredNode.type || 'Unknown'}
+                                </Badge>
                             </div>
-                        </Card>
-                    </div>
-                )}
-            </Card>
+                            {hoveredNode.flag && (
+                                <div className="flex justify-between items-center bg-rose-950/30 p-2 rounded border border-rose-900/50">
+                                    <span className="text-rose-400 font-semibold">Flagged</span>
+                                    <span className="font-mono text-rose-300">{hoveredNode.flag}</span>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
         </div>
     );
 }
