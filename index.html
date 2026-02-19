@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Money Muling Detection</title>
+</head>
+<body>
+
+<h2>Money Muling Detection Engine</h2>
+
+<input type="file" id="fileInput" accept=".csv" />
+<button onclick="uploadFile()">Analyze</button>
+
+<div id="output"></div>
+
+<script>
+async function uploadFile() {
+
+    const fileInput = document.getElementById("fileInput");
+    const file = fileInput.files[0];
+
+    if (!file) {
+        alert("Select a CSV file");
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+        const response = await fetch("http://127.0.0.1:8000/analyze", {
+            method: "POST",
+            body: formData
+        });
+
+        const data = await response.json();
+
+        document.getElementById("output").innerHTML =
+            "<pre>" + JSON.stringify(data, null, 2) + "</pre>";
+
+    } catch (error) {
+        alert("API not reachable");
+        console.error(error);
+    }
+}
+</script>
+
+</body>
+</html>

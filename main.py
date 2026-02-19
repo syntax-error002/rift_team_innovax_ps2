@@ -1,13 +1,26 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 import pandas as pd
 import networkx as nx
 from datetime import timedelta
 from collections import defaultdict
 import io
 
-app = FastAPI()
+app = FastAPI(title="Money Muling Detection Engine")
 
+# CORS FIX
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# =====================================================
+# Core Analysis
+# =====================================================
 
 def analyze_transactions(df: pd.DataFrame):
 
@@ -17,137 +30,76 @@ def analyze_transactions(df: pd.DataFrame):
 
     df = df.copy()
     df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce")
-    df.dropna(subset=required_columns, inplace=True)
+    df.dropna(inplace=True)
 
     G = nx.DiGraph()
 
     for _, row in df.iterrows():
-        G.add_edge(
-            row["sender_id"],
-            row["receiver_id"],
-            amount=row["amount"],
-            timestamp=row["timestamp"]
-        )
+        G.add_edge(row["sender_id"], row["receiver_id"])
 
     suspicion_scores = defaultdict(int)
     fraud_rings = []
-    ring_members = set()
     ring_counter = 1
 
-    # --------------------------
-    # Pattern 1: Cycles
-    # --------------------------
-    cycles = list(nx.simple_cycles(G))
-    for cycle in cycles:
-        if 3 <= len(cycle) <= 5:
-            ring_id = f"RING_{ring_counter}"
-            fraud_rings.append({
-                "ring_id": ring_id,
-                "accounts": cycle,
-                "ring_size": len(cycle)
-            })
-            for acc in cycle:
-                suspicion_scores[acc] += 50
-                ring_members.add(acc)
-            ring_counter += 1
+    # Cycle Detection (Safe version)
+    try:
+        cycles = list(nx.simple_cycles(G))
+        cycles = [c for c in cycles if 3 <= len(c) <= 5]
+    except:
+        cycles = []
 
-    # --------------------------
-    # Pattern 2: Smurfing
-    # --------------------------
+    for cycle in cycles:
+        ring_id = f"RING_{ring_counter}"
+        fraud_rings.append({
+            "ring_id": ring_id,
+            "accounts": cycle,
+            "ring_size": len(cycle)
+        })
+        for acc in cycle:
+            suspicion_scores[acc] += 50
+        ring_counter += 1
+
+    # High degree detection
     for node in G.nodes():
         if G.in_degree(node) > 10 or G.out_degree(node) > 10:
             suspicion_scores[node] += 30
 
-    # --------------------------
-    # Pattern 3: Layering
-    # --------------------------
-    tx_counts = (
-        df.groupby("sender_id").size()
-        .add(df.groupby("receiver_id").size(), fill_value=0)
-    )
-
-    for node in G.nodes():
-        total_tx = tx_counts.get(node, 0)
-        if total_tx < 3 and G.in_degree(node) > 0 and G.out_degree(node) > 0:
-            suspicion_scores[node] += 20
-
-    # --------------------------
-    # High Velocity (72h)
-    # --------------------------
+    # Velocity detection
     for account in G.nodes():
         acc_tx = df[
             (df["sender_id"] == account) |
             (df["receiver_id"] == account)
         ]
         if len(acc_tx) >= 2:
-            if (acc_tx["timestamp"].max() -
-                acc_tx["timestamp"].min()) <= timedelta(hours=72):
+            time_diff = acc_tx["timestamp"].max() - acc_tx["timestamp"].min()
+            if time_diff <= timedelta(hours=72):
                 suspicion_scores[account] += 20
 
-    # =====================================================
-    # NEW FEATURE 1: Mule Leader Detection
-    # =====================================================
-    betweenness = nx.betweenness_centrality(G)
-    tx_threshold = sorted(betweenness.values(), reverse=True)
-
-    if len(tx_threshold) > 0:
-        cutoff = tx_threshold[max(1, int(0.05 * len(tx_threshold))) - 1]
-    else:
-        cutoff = 0
-
-    for node in G.nodes():
-        if (
-            betweenness.get(node, 0) >= cutoff and
-            tx_counts.get(node, 0) < 10 and
-            node in ring_members
-        ):
-            suspicion_scores[node] += 40
-
-    # =====================================================
-    # NEW FEATURE 2: Coordinated Burst Detection
-    # =====================================================
-    df["hour_window"] = df["timestamp"].dt.floor("H")
-    grouped = df.groupby("hour_window")
-
-    for _, group in grouped:
-        accounts = set(group["sender_id"]).union(set(group["receiver_id"]))
-        if len(accounts) >= 5:
-            for acc in accounts:
-                suspicion_scores[acc] += 40
-
-    # =====================================================
-    # NEW FEATURE 3: Risk Propagation
-    # =====================================================
-    high_risk = [acc for acc, score in suspicion_scores.items() if score >= 70]
-
-    for acc in high_risk:
-        for neighbor in G.successors(acc):
-            suspicion_scores[neighbor] += 15
-        for neighbor in G.predecessors(acc):
-            suspicion_scores[neighbor] += 15
-
-        for neighbor in G.successors(acc):
-            for second in G.successors(neighbor):
-                suspicion_scores[second] += 5
-
-    # --------------------------
-    # Merchant Protection
-    # --------------------------
     suspicious_accounts = []
 
     for account in G.nodes():
-        score = suspicion_scores.get(account, 0)
+        score = min(suspicion_scores.get(account, 0), 100)
 
-        if tx_counts.get(account, 0) > 1000:
-            score = min(score, 10)
+        if score >= 70:
+            risk = "High"
+        elif score >= 40:
+            risk = "Medium"
+        elif score > 0:
+            risk = "Low"
+        else:
+            continue
 
-        score = min(score, 100)
+        suspicious_accounts.append({
+            "account_id": account,
+            "suspicion_score": score,
+            "risk_level": risk
+        })
 
-        if score > 0:
-            suspicious_accounts.append({
-                "account_id": account,
-                "suspicion_score": score
-            })
+    suspicious_accounts = sorted(
+        suspicious_accounts,
+        key=lambda x: x["suspicion_score"],
+        reverse=True
+    )
 
     summary = {
         "total_accounts": len(G.nodes()),
@@ -157,11 +109,14 @@ def analyze_transactions(df: pd.DataFrame):
     }
 
     return {
+        "summary": summary,
         "suspicious_accounts": suspicious_accounts,
-        "fraud_rings": fraud_rings,
-        "summary": summary
+        "fraud_rings": fraud_rings
     }
 
+# =====================================================
+# API Endpoint
+# =====================================================
 
 @app.post("/analyze")
 async def analyze(file: UploadFile = File(...)):
@@ -176,12 +131,11 @@ async def analyze(file: UploadFile = File(...)):
         return JSONResponse(content=result)
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
+        return {"error": str(e)}
 
 @app.get("/")
 def health():
-    return {"status": "Money Muling Detection Engine Running"}
+    return {"status": "API Running"}
 
 
 if __name__ == "__main__":
