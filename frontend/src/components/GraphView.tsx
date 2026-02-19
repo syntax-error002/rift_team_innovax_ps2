@@ -112,9 +112,8 @@ export function GraphView({ elements, onNodeClick, searchTerm }: GraphViewProps)
         });
 
         // Dynamic Layout Selection
-        // 'cose' is good for small graphs but explodes/freezes on large ones
-        // 'concentric' or 'circle' is instant and stable for high density
-        const useStableLayout = safeElements.length > 200;
+        // USER REQUEST: Always use force-directed layout ("free form")
+        // 'cose' provides the organic, physics-based simulation
 
         cyRef.current = cytoscape({
             container: containerRef.current,
@@ -125,28 +124,19 @@ export function GraphView({ elements, onNodeClick, searchTerm }: GraphViewProps)
                     style: {
                         'background-color': '#475569',
                         'label': 'data(id)',
-                        'color': '#e2e8f0',
-                        'font-size': '11px',
-                        'font-weight': 700,
-                        'text-valign': 'bottom',
-                        'text-margin-y': 6,
+                        'color': '#cbd5e1', // Slate-300 for better contrast text
+                        'font-size': '10px',
+                        'font-weight': 600,
+                        'text-valign': 'center',
                         'text-halign': 'center',
-                        'text-background-color': 'rgba(2, 6, 23, 0.7)',
-                        'text-background-opacity': 1,
-                        'text-background-padding': '3px',
-                        'text-background-shape': 'roundrectangle',
-                        'width': '50px',
-                        'height': '50px',
-                        'border-width': 2.5,
+                        'width': '40px',
+                        'height': '40px',
+                        'border-width': 2,
                         'border-color': '#64748b',
-                        'overlay-padding': '8px',
+                        'overlay-padding': '6px',
                         'z-index': 10,
                         // @ts-ignore
-                        'shadow-blur': 8,
-                        // @ts-ignore
-                        'shadow-color': '#0f172a',
-                        // @ts-ignore
-                        'shadow-opacity': 0.6,
+                        'shadow-blur': 0, // Performance optimization
                     }
                 },
                 // Risk heat-map: green (safe) → amber → red (threat). Sizes auto-scale.
@@ -154,27 +144,21 @@ export function GraphView({ elements, onNodeClick, searchTerm }: GraphViewProps)
                     selector: 'node[risk_score]',
                     style: {
                         'background-color': 'mapData(risk_score, 0, 100, #22d3ee, #ef4444)',
-                        'width': 'mapData(risk_score, 0, 100, 44, 80)',
-                        'height': 'mapData(risk_score, 0, 100, 44, 80)',
+                        'width': 'mapData(risk_score, 0, 100, 30, 60)',
+                        'height': 'mapData(risk_score, 0, 100, 30, 60)',
                     },
                 },
                 {
                     selector: 'node[?suspicious]',
                     style: {
                         'border-color': '#fb923c',
-                        'border-width': 4,
-                        // @ts-ignore
-                        'shadow-blur': 30,
-                        // @ts-ignore
-                        'shadow-color': '#fb923c',
-                        // @ts-ignore
-                        'shadow-opacity': 0.75,
+                        'border-width': 3,
                     }
                 },
                 {
                     selector: 'node[community >= 0]',
                     style: {
-                        'border-width': 3,
+                        'border-width': 2,
                         'border-color': '#38bdf8',
                     },
                 },
@@ -184,15 +168,9 @@ export function GraphView({ elements, onNodeClick, searchTerm }: GraphViewProps)
                         'shape': 'diamond',
                         'background-color': '#f97316',
                         'border-color': '#fed7aa',
-                        'border-width': 3,
-                        'width': '62px',
-                        'height': '62px',
-                        // @ts-ignore
-                        'shadow-blur': 22,
-                        // @ts-ignore
-                        'shadow-color': '#f97316',
-                        // @ts-ignore
-                        'shadow-opacity': 0.6,
+                        'border-width': 2,
+                        'width': '45px',
+                        'height': '45px',
                     }
                 },
                 {
@@ -200,16 +178,10 @@ export function GraphView({ elements, onNodeClick, searchTerm }: GraphViewProps)
                     style: {
                         'shape': 'star',
                         'background-color': '#d946ef',
-                        'width': '88px',
-                        'height': '88px',
+                        'width': '60px',
+                        'height': '60px',
                         'border-color': '#f0abfc',
-                        'border-width': 4,
-                        // @ts-ignore
-                        'shadow-blur': 40,
-                        // @ts-ignore
-                        'shadow-color': '#d946ef',
-                        // @ts-ignore
-                        'shadow-opacity': 0.8,
+                        'border-width': 3,
                     }
                 },
                 {
@@ -217,16 +189,10 @@ export function GraphView({ elements, onNodeClick, searchTerm }: GraphViewProps)
                     style: {
                         'shape': 'hexagon',
                         'background-color': '#facc15',
-                        'width': '76px',
-                        'height': '76px',
+                        'width': '50px',
+                        'height': '50px',
                         'border-color': '#fef08a',
-                        'border-width': 3,
-                        // @ts-ignore
-                        'shadow-blur': 28,
-                        // @ts-ignore
-                        'shadow-color': '#facc15',
-                        // @ts-ignore
-                        'shadow-opacity': 0.65,
+                        'border-width': 2,
                     }
                 },
                 {
@@ -234,38 +200,22 @@ export function GraphView({ elements, onNodeClick, searchTerm }: GraphViewProps)
                     style: {
                         'shape': 'ellipse',
                         'background-color': '#f43f5e',
-                        'width': '64px',
-                        'height': '64px',
+                        'width': '45px',
+                        'height': '45px',
                         'border-color': '#fda4af',
-                        'border-width': 4,
-                        // @ts-ignore
-                        'shadow-blur': 32,
-                        // @ts-ignore
-                        'shadow-color': '#f43f5e',
-                        // @ts-ignore
-                        'shadow-opacity': 0.75,
+                        'border-width': 3,
                     }
                 },
                 {
                     selector: 'edge',
                     style: {
-                        'width': 2.5,
+                        'width': 1.5,
                         'line-color': edgeColor,
                         'target-arrow-color': edgeColor,
                         'target-arrow-shape': 'triangle',
-                        'curve-style': useStableLayout ? 'haystack' : 'unbundled-bezier', // haystack is simpler/faster
-                        'control-point-distances': 20,
-                        'control-point-weights': 0.5,
-                        'opacity': 0.55,
-                        'arrow-scale': 1.1,
-                        // @ts-ignore
-                        'shadow-blur': 6,
-                        // @ts-ignore
-                        'shadow-color': edgeColor,
-                        // @ts-ignore
-                        'shadow-opacity': 0.3,
-                        'transition-property': 'control-point-distances, width, line-color, target-arrow-color, arrow-scale, opacity',
-                        'transition-duration': 300,
+                        'curve-style': 'bezier', // Cleaner curves
+                        'opacity': 0.4,
+                        'arrow-scale': 1.0,
                     }
                 },
                 {
@@ -273,8 +223,8 @@ export function GraphView({ elements, onNodeClick, searchTerm }: GraphViewProps)
                     style: {
                         'line-color': '#ef4444',
                         'target-arrow-color': '#ef4444',
-                        'width': 3,
-                        'opacity': 0.9,
+                        'width': 2,
+                        'opacity': 0.8,
                     }
                 },
                 {
@@ -283,37 +233,28 @@ export function GraphView({ elements, onNodeClick, searchTerm }: GraphViewProps)
                         'label': 'data(amount)',
                         'font-size': '8px',
                         'text-rotation': 'autorotate',
-                        'text-background-color': '#ffffff',
-                        'text-background-opacity': 0.8,
+                        'text-background-color': '#020617', // Dark background for text
+                        'text-background-opacity': 0.7,
                         'text-background-padding': '2px',
-                        'color': '#475569',
+                        'color': '#cbd5e1',
                     }
                 },
                 // INTERACTION STATES
                 {
                     selector: ':selected',
                     style: {
-                        'border-width': 4,
+                        'border-width': 3,
                         'border-color': '#3b82f6', // Blue-500
                         'border-opacity': 1,
                         'background-color': '#2563eb', // Blue-600
-                        'text-outline-color': '#1e3a8a',
                     }
                 },
                 // High-risk pulse class
                 {
                     selector: '.high-risk',
                     style: {
-                        'border-width': 5,
+                        'border-width': 4,
                         'border-color': '#fb7185', // Rose-400
-                        // @ts-ignore
-                        'shadow-blur': 28,
-                        // @ts-ignore
-                        'shadow-color': '#fb7185',
-                        // @ts-ignore
-                        'shadow-opacity': 0.7,
-                        'transition-property': 'border-width, shadow-blur, shadow-opacity',
-                        'transition-duration': 400,
                     },
                 },
                 {
@@ -322,54 +263,54 @@ export function GraphView({ elements, onNodeClick, searchTerm }: GraphViewProps)
                         'background-color': '#8b5cf6', // Violet-500
                         'line-color': '#8b5cf6',
                         'target-arrow-color': '#8b5cf6',
-                        'transition-property': 'background-color, line-color, target-arrow-color',
-                        'transition-duration': 300
+                        'z-index': 9999, // Ensure on top
+                        'opacity': 1, // Full opacity
                     }
                 },
                 {
                     selector: '.faded',
                     style: {
-                        'opacity': 0.1,
-                        'transition-property': 'opacity',
-                        'transition-duration': 300
+                        'opacity': 0.05, // Extreme fade for focus effect
+                        'z-index': 0,
                     }
                 },
                 // FLEXIBLE HOVER EFFECT FOR EDGES
                 {
                     selector: '.edge-hover',
                     style: {
-                        'width': 5,
+                        'width': 3,
                         'line-color': '#38bdf8', // Light blue highlight
                         'target-arrow-color': '#38bdf8',
-                        'arrow-scale': 1.5,
-                        'control-point-distances': 60, // Bend significantly
+                        'arrow-scale': 1.2,
                         'opacity': 1,
                         'z-index': 999,
-                        'text-opacity': 1,
-                        'font-weight': 'bold',
-                        'font-size': '10px'
                     }
                 }
             ],
             layout: {
-                // Force-directed, organic feel for smaller graphs, circular overview for very dense sets
-                name: useStableLayout ? 'concentric' : 'cose',
-                animate: !useStableLayout, // Disable animation for large graphs
-                animationDuration: 800,
-                nodeRepulsion: () => 450000,
-                idealEdgeLength: () => 110,
+                // FORCE DIRECTED ALWAYS
+                name: 'cose',
+                animate: true,
+                animationDuration: 1000,
+                nodeRepulsion: () => 1000000, // Strong repulsion to spread nodes out
+                idealEdgeLength: () => 150,   // Longer edges for "thread-like" look
                 // @ts-ignore
-                gravity: 0.18,
+                gravity: 0.1,                 // Very low gravity to allow "floating"
                 // @ts-ignore
-                numIter: 900,
-                padding: 30,
+                numIter: 1000,
+                // @ts-ignore
+                refresh: 20,
+                fit: true,
+                padding: 50,
+                componentSpacing: 60,
+                nodeOverlap: 20,
             },
-            minZoom: 0.1, // Allow zooming out further
-            maxZoom: 5,   // Allow zooming in closer
-            wheelSensitivity: 0.5, // More responsive zooming
-            pixelRatio: 'auto', // Crisp rendering on high-DPI screens
-            textureOnViewport: true, // Smoother panning/zooming
-            motionBlur: false, // Clean rendering without blur
+            minZoom: 0.2,
+            maxZoom: 3,
+            wheelSensitivity: 0.3,
+            pixelRatio: 'auto',
+            textureOnViewport: false,
+            motionBlur: false,
         });
 
         const cy = cyRef.current;
@@ -381,6 +322,7 @@ export function GraphView({ elements, onNodeClick, searchTerm }: GraphViewProps)
             }
         });
 
+        // HOVER "THREAD" EFFECT
         cy.on('mouseover', 'node', (evt) => {
             const node = evt.target;
             containerRef.current!.style.cursor = 'pointer';
@@ -388,11 +330,23 @@ export function GraphView({ elements, onNodeClick, searchTerm }: GraphViewProps)
                 id: node.id(),
                 ...node.data()
             });
+
+            // Highlight thread: Node + Neighbors + Connected Edges
+            cy.batch(() => {
+                cy.elements().addClass('faded'); // Fade everything first
+                const neighborhood = node.neighborhood().add(node); // Node + direct connections
+                neighborhood.removeClass('faded').addClass('highlighted'); // Highlight thread
+            });
         });
 
         cy.on('mouseout', 'node', () => {
             containerRef.current!.style.cursor = 'default';
             setHoveredNode(null);
+
+            // Reset styles
+            cy.batch(() => {
+                cy.elements().removeClass('faded highlighted');
+            });
         });
 
         // EDGE HOVER EFFECTS
