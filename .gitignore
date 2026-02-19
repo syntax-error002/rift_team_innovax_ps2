@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.env
+
+# Node
+node_modules/
+.next/
+dist/
+build/
+.DS_Store
+
+# Local
+debug_backend.py
+sample_data.csv
