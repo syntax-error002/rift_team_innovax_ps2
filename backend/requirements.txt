@@ -4,3 +4,4 @@ pandas
 networkx
 python-multipart
 pydantic
+numpy
